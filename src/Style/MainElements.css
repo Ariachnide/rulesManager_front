@@ -1,0 +1,11 @@
+.card {
+  margin-top: 2em;
+  padding: 2em;
+  border: 3px solid indigo;
+  border-radius: 25px;
+  text-align: left;
+}
+
+h2 {
+  margin-top: 0;
+}
