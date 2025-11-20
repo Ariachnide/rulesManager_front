@@ -1,11 +1,41 @@
 .card {
   margin-top: 2em;
   padding: 2em;
-  border: 3px solid indigo;
+  border: 3px solid rgb(130, 62, 255);
   border-radius: 25px;
   text-align: left;
 }
 
 h2 {
   margin-top: 0;
+}
+
+.hoverReactBlue:hover {
+  color: cornflowerblue;
+  transition: 300ms;
+  cursor: pointer;
+}
+
+.hoverReactRed:hover {
+  color: lightcoral;
+  transition: 300ms;
+  cursor: pointer;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+dialog {
+  border: 3px solid rgb(130, 62, 255);
+  border-radius: 25px;
+}
+
+.dialogBox {
+  margin: 16px 8px;
+}
+
+.inlineSpacedElements {
+  margin-left: 12px;
+  margin-right: 12px;
 }
