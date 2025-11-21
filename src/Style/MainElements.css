@@ -12,12 +12,14 @@ h2 {
 
 .hoverReactBlue:hover {
   color: cornflowerblue;
+  border-color: cornflowerblue;
   transition: 300ms;
   cursor: pointer;
 }
 
 .hoverReactRed:hover {
   color: lightcoral;
+  border-color: lightcoral;
   transition: 300ms;
   cursor: pointer;
 }

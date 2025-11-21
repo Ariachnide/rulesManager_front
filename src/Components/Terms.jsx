@@ -2,11 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import "../Style/MainElements.css";
 import TermTypes from "../utils/TermTypes.js";
 
-function Terms() {
-    const [termList, setTermList] = useState([]);
-    const [termListMessage, setTermListMessage] = useState("Données en cours de récupération...");
-    const [isTermConnectionAvailable, setIsTermConnectionAvailable] = useState(false);
-
+function Terms(props) {
     const postDialogRef = useRef(null);
     const [postTermName, setPostTermName] = useState("");
     const [postTypeValue, setPostTypeValue] = useState(TermTypes.TEXT);
@@ -17,26 +13,8 @@ function Terms() {
     const [updateTypeValue, setUpdateTypeValue] = useState(null);
 
     useEffect(() => {
-        handleFetchTermList();
+        props.handleFetchTermList();
     }, []);
-
-    // GET TERM LIST
-    const handleFetchTermList = () => 
-        fetch(`${import.meta.env.VITE_API_BASE_URL}terms/`)
-            .then((res) => res.json())
-            .then((data) => {
-                setTermList(data.result.rows);
-                setIsTermConnectionAvailable(true);
-                if (data.result.rows.length === 0) {
-                    setTermListMessage("Aucune donnée enregistrée.");
-                } else {
-                    setTermListMessage("");
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-                setTermListMessage("Erreur lors de la récupération des termes.");
-            });
     
     // POST TERM
     const handlePostModalOpening = (isOpen) => {
@@ -66,10 +44,10 @@ function Terms() {
         )
             .then((res) => res.json())
             .then((data) => {
-                if (termList.length == 0) {
-                    setTermListMessage("");
+                if (props.termList.length == 0) {
+                    props.setTermListMessage("");
                 }
-                setTermList([...termList, data.result]);
+                props.setTermList([...props.termList, data.result]);
             })
             .catch((error) => {
                 console.error(error);
@@ -82,7 +60,7 @@ function Terms() {
     const handleUpdateModalOpening = (isOpen, id) => {
         setTempUpdateId(id);
         if (isOpen) {
-            const item = termList.find(t => t.id === id);
+            const item = props.termList.find((term) => term.id === id);
             setUpdateTermName(item.name);
             setUpdateTypeValue(item.type);
             updateDialogRef.current.showModal();
@@ -109,7 +87,7 @@ function Terms() {
             }
         )
             .then((res) => res.json())
-            .then((data) => setTermList(
+            .then((data) => props.setTermList(
                 (previousState) => previousState.map(
                     (term) => term.id === data.result.id ? {...term, name: data.result.name, type: data.result.type} : {...term}
                 )
@@ -139,10 +117,10 @@ function Terms() {
                 </p>
 
                 {
-                    termList.length > 0
+                    props.termList.length > 0
                         ? (
                             <ul>
-                                {termList.map(term => (
+                                {props.termList.map(term => (
                                     <li key={term.id}>
                                         <span className="hoverReactBlue" onClick={() => handleUpdateModalOpening(true, term.id)}>
                                             <i>{term.name}</i>, de type <b>{term.type}</b>
@@ -151,18 +129,18 @@ function Terms() {
                                 )}
                             </ul>
                         ) : (
-                            <p><b>{termListMessage}</b></p>
+                            <p><b>{props.termListMessage}</b></p>
                         )
                 }
 
                 {
-                    (isTermConnectionAvailable && termList.length > 0)
+                    (props.isTermConnectionAvailable && props.termList.length > 0)
                         ? <p>Cliclez sur un terme pour le modifier.</p>
                         : null
                 }
 
                 {
-                    isTermConnectionAvailable
+                    props.isTermConnectionAvailable
                         ? (
                             <button className="hoverReactBlue inlineSpacedElements" onClick={() => handlePostModalOpening(true)}>
                                 Créer un nouveau terme
@@ -170,7 +148,7 @@ function Terms() {
                         ) : null
                 }
 
-                <button className="hoverReactBlue inlineSpacedElements" onClick={handleFetchTermList}>
+                <button className="hoverReactBlue inlineSpacedElements" onClick={props.handleFetchTermList}>
                     Recharger le catalogue de termes
                 </button>
 
