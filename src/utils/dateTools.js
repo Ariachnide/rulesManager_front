@@ -1,0 +1,29 @@
+const getRawDateNow = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    let mm = today.getMonth() + 1;
+    let dd = today.getDate();
+    
+    if (dd < 10) dd = "0" + dd;
+    if (mm < 10) mm = "0" + mm;
+    
+    const formattedToday = yyyy + "-" + mm + "-" + dd;
+    return formattedToday;
+};
+
+const convertDate = (date) => {
+    if (date.includes("-")) {
+        return date.split("-").reverse().join("/");
+    } else {
+        let result = date.split("/");
+        if (result[0].length === 1) {
+            result[0] = "0" + result[0];
+        }
+        if (result[1].length === 1) {
+            result[1] = "0" + result[1];
+        }
+        return result.reverse().join("-");
+    }
+}
+
+export { getRawDateNow, convertDate };

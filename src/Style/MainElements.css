@@ -10,6 +10,12 @@ h2 {
   margin-top: 0;
 }
 
+pre {
+  border: 1px solid white;
+  padding: 8px;
+  background-color: rgb(32, 32, 32);
+}
+
 .hoverReactBlue:hover {
   color: cornflowerblue;
   border-color: cornflowerblue;
@@ -20,6 +26,13 @@ h2 {
 .hoverReactRed:hover {
   color: lightcoral;
   border-color: lightcoral;
+  transition: 300ms;
+  cursor: pointer;
+}
+
+.hoverReactGreen:hover {
+  color: seagreen;
+  border-color: seagreen;
   transition: 300ms;
   cursor: pointer;
 }
@@ -40,4 +53,9 @@ dialog {
 .inlineSpacedElements {
   margin-left: 12px;
   margin-right: 12px;
+}
+
+.placeholderText {
+  margin-left: 32px;
+  color: dimgrey;
 }

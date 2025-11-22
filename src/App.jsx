@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./Style/index.css";
 import Terms from "./Components/Terms.jsx";
+import Rules from "./Components/Rules.jsx";
 
 function App() {
     const [termList, setTermList] = useState([]);
@@ -38,6 +39,10 @@ function App() {
                 handleFetchTermList={handleFetchTermList}
             />
 
+            <Rules
+                termList={termList}
+                isTermConnectionAvailable={isTermConnectionAvailable}
+            />
         </>
     )
 };

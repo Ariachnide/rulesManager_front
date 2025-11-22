@@ -97,7 +97,7 @@ function Terms(props) {
             });
 
         handlePostModalOpening(false);
-    }
+    };
 
     return (
         <>
@@ -288,7 +288,7 @@ function Terms(props) {
 
             </div>
         </>
-    )
+    );
 };
 
 export default Terms;
