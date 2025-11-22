@@ -20,6 +20,8 @@ function Rules(props) {
     const [ruleBuilderIndex, setRuleBuilderIndex] = useState(0);
     const [editedRuleName, setEditedRuleName] = useState("");
 
+    const [isCreating, setIsCreating] = useState(false);
+
     const [criteriaOperator, setCriteriaOperator] = useState("");
     const [criteriaValue, setCriteriaValue] = useState("");
     const [editedCriteria, setEditedCriteria] = useState({});
@@ -30,8 +32,12 @@ function Rules(props) {
     const [editedBlock, setEditedBlock] = useState({});
     const [editedBlockParent, setEditedBlockParent] = useState({});
 
+    const [newElmChoice, setNewElmChoice] = useState("");
+    const [newElmParent, setNewElmParent] = useState({});
+
     const blockEditModal = useRef(null);
     const criteriaEditModal = useRef(null);
+    const newElmModal = useRef(null);
 
     useEffect(() => {
         handleFetchRuleList();
@@ -45,6 +51,8 @@ function Rules(props) {
         setRuleBuilderIndex(0);
         setEditedRuleName("");
 
+        setIsCreating(false);
+
         setCriteriaOperator("");
         setCriteriaValue("");
         setEditedCriteria({});
@@ -55,9 +63,13 @@ function Rules(props) {
         setEditedBlock({});
         setEditedBlockParent({});
 
+        setNewElmChoice("");
+        setNewElmParent({});
+
         blockEditModal.current.close();
         ruleDetailModal.current.close();
         criteriaEditModal.current.close();
+        newElmModal.current.close();
     };
 
     // GET RULE LIST
@@ -90,12 +102,33 @@ function Rules(props) {
     };
 
     const confirmRuleUpdate = () => {
-        // put method
+        fetch(
+            `${import.meta.env.VITE_API_BASE_URL}rules/${processedRuleID}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: editedRuleName,
+                    rule: removeRuleIndex(processedRule)
+                })
+            }
+        )
+            .then((res) => res.json())
+            .then((data) => {
+                setRuleList((previousState) => previousState.map(
+                    (rule) => rule.id === data.result.id ? {...rule, name: data.result.name, rule: data.result.rule } : rule
+                ));
+                globalRuleEditionReset();
+            })
+            .catch((error) => console.error(error));
     };
 
     // RULE CREATION
     const handleRuleCreation = () => {
-        const addRuleIndexResults = addRuleIndex(defaultRule);
+        const addRuleIndexResults = addRuleIndex(JSON.parse(JSON.stringify(defaultRule)));
         setProcessedRule(addRuleIndexResults[0]);
         setRuleBuilderIndex(addRuleIndexResults[1]);
         setEditedRuleName("Nouvelle règle");
@@ -103,11 +136,31 @@ function Rules(props) {
     };
 
     const confirmRulePost = () => {
-        // post method
+        fetch(
+            `${import.meta.env.VITE_API_BASE_URL}rules/`,
+            {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: editedRuleName,
+                    rule: removeRuleIndex(processedRule)
+                })
+            }
+        )
+            .then((res) => res.json())
+            .then((data) => {
+                setRuleList([...ruleList, data.result]);
+                globalRuleEditionReset();
+            })
+            .catch((error) => console.error(error));
     };
 
     // RULE EDITION
     const handleCriteriaEdition = (id, parentElm) => {
+        setIsCreating(false);
         const nextEditedCriteria = retrieveElmById(processedRule, id);
         const nextEditedTerm = props.termList.find((t) => nextEditedCriteria.term === t.name);
 
@@ -126,7 +179,7 @@ function Rules(props) {
 
     const onCriteriaNameChange = (e) => {
         const newTerm = props.termList.find((t) => e.target.value === t.name);
-        setEditedTerm({...newTerm});
+        setEditedTerm(newTerm);
         switch (newTerm.type) {
             case TermTypes.TEXT:
                 setCriteriaValue("");
@@ -195,6 +248,7 @@ function Rules(props) {
 
     // BLOCK EDITION
     const handleBlockEdition = (id, parentElm) => {
+        setIsCreating(false);
         const nextEditedBlock = retrieveElmById(processedRule, id);
 
         setBlockOperator(nextEditedBlock.blockOperator);
@@ -231,11 +285,97 @@ function Rules(props) {
 
     // ELEMENT CREATION
     const addNewElm = (id) => {
-        // retrieve block
-        // open dialog, suggest to add criteria or block
-        // if criteria, use code from criteria dialog box
-        // if block, use code from block code
-        // confirm or abord new elm
+        setIsCreating(true);
+        setNewElmParent(retrieveElmById(processedRule, id));
+        setNewElmChoice("");
+        newElmModal.current.showModal();
+    };
+
+    const closeNewElmModal = () => {
+        setNewElmParent({});
+        setNewElmChoice("");
+        newElmModal.current.close();
+    };
+
+    const confirmNewElmCreation = () => {
+        switch (newElmChoice) {
+            case (ElementTypes.BLOCK):
+                setBlockOperator("ET");
+                setEditedBlock({
+                    dataId: ruleBuilderIndex + 1,
+                    blockOperator: "ET",
+                    content: [],
+                    type: ElementTypes.BLOCK
+                });
+                setEditedBlockParent(newElmParent);
+                
+                setRuleBuilderIndex((prevState) => prevState + 1);
+
+                blockEditModal.current.showModal();
+                break;
+
+            case (ElementTypes.CRITERIA):
+                const nextEditedTerm = props.termList[0];
+
+                const nextOperator = "=";
+                setCriteriaOperator("=");
+                let nextValue = "";
+                switch (nextEditedTerm.type) {
+                    case (TermTypes.DATE):
+                        nextValue = getRawDateNow();
+                        break;
+                    case (TermTypes.NUMBER):
+                        nextValue = 0;
+                        break;
+                    case (TermTypes.TEXT):
+                        nextValue = "";
+                        break;
+                }
+                setCriteriaValue(nextValue);
+
+                setEditedCriteria({
+                    dataId: ruleBuilderIndex + 1,
+                    operator: nextOperator,
+                    term: nextEditedTerm.name,
+                    type: ElementTypes.CRITERIA,
+                    value: nextValue
+                });
+                setEditedCriteriaParent(newElmParent);
+                setEditedTerm(nextEditedTerm);
+
+                setRuleBuilderIndex((prevState) => prevState + 1);
+                
+               criteriaEditModal.current.showModal();
+                break;
+        }
+
+        closeNewElmModal();
+    };
+
+    const confirmNewCriteriaCreation = () => {
+        editedCriteria.term = editedTerm.name;
+        editedCriteria.operator = criteriaOperator;
+        if (editedTerm.type === TermTypes.DATE) {
+            editedCriteria.value = convertDate(criteriaValue);
+        } else {
+            editedCriteria.value = criteriaValue;
+        }
+
+        editedCriteriaParent.content.push(editedCriteria);
+
+        setProcessedRule(JSON.parse(JSON.stringify(processedRule)));
+
+        closeCriteriaEditionModal();
+    };
+
+    const confirmNewBlockCreation = () => {
+        editedBlock.blockOperator = blockOperator;
+
+        editedBlockParent.content.push(editedBlock);
+
+        setProcessedRule(JSON.parse(JSON.stringify(processedRule)));
+
+        closeBlockEditionModal();
     };
 
     return(
@@ -316,6 +456,17 @@ function Rules(props) {
                                     <button className="hoverReactBlue inlineSpacedElements" onClick={handleRuleCreation}>
                                         Créer une nouvelle règle
                                     </button>
+                                    {
+                                        processedRuleID > -1 ? (
+                                            <button className="hoverReactBlue inlineSpacedElements" onClick={confirmRuleUpdate}>
+                                                Editer la règle
+                                            </button>
+                                        ) : (
+                                            <button className="hoverReactBlue inlineSpacedElements" onClick={confirmRulePost}>
+                                                Enregistrer la règle
+                                            </button>
+                                        )
+                                    }
                                 </div>
 
                             </>
@@ -345,7 +496,7 @@ function Rules(props) {
 
 
                 <dialog ref={criteriaEditModal}>
-                    <p className="dialogBox">Modification du critère {editedTerm.name} (de type {editedTerm.type}):</p>
+                    <p className="dialogBox">Edition du critère {editedTerm.name} (de type {editedTerm.type}):</p>
 
                     <div className="dialogBox">
                         <label className="inlineSpacedElements" htmlFor="criteriaTermSelect">
@@ -412,16 +563,29 @@ function Rules(props) {
                         }
                     </div>
 
-                    <div className="dialogBox">
-                        <button className="hoverReactGreen inlineSpacedElements" onClick={confirmCriteriaUpdate}>Confirmer</button>
-                        <button className="hoverReactBlue inlineSpacedElements" onClick={closeCriteriaEditionModal}>Annuler</button>
-                        <button className="hoverReactRed inlineSpacedElements" onClick={deleteCriteria}>Supprimer</button>
-                    </div>
+                    {
+                        isCreating
+                            ? (
+                                <div className="dialogBox">
+                                    <button className="hoverReactGreen inlineSpacedElements" onClick={confirmNewCriteriaCreation}>Confirmer</button>
+                                    <button className="hoverReactBlue inlineSpacedElements" onClick={closeCriteriaEditionModal}>Annuler</button>
+                                </div>
+                            ) : (
+                                <div className="dialogBox">
+                                    <button className="hoverReactGreen inlineSpacedElements" onClick={confirmCriteriaUpdate}>Confirmer</button>
+                                    <button className="hoverReactBlue inlineSpacedElements" onClick={closeCriteriaEditionModal}>Annuler</button>
+                                    <button className="hoverReactRed inlineSpacedElements" onClick={deleteCriteria}>Supprimer</button>
+                                </div>
+                            )
+                    }
                     
                 </dialog>
 
+
+
                 <dialog ref={blockEditModal}>
-                    <p className="dialogBox">Modification du block:</p>
+                    <p className="dialogBox">Edition du bloc :</p>
+                    
                     <div className="dialogBox">
                         <fieldset>
                             <div className="dialogBox">
@@ -446,12 +610,64 @@ function Rules(props) {
                                 />
                                 <label htmlFor="OU">OU</label>
                             </div>
+                        </fieldset>
+                    </div>
+
+                    {
+                        isCreating
+                            ? (
+                                <div className="dialogBox">
+                                    <button className="hoverReactGreen inlineSpacedElements" onClick={confirmNewBlockCreation}>Confirmer</button>
+                                    <button className="hoverReactBlue inlineSpacedElements" onClick={closeBlockEditionModal}>Annuler</button>
+                                </div>
+                            )
+                            : (
+                                <div className="dialogBox">
+                                    <button className="hoverReactGreen inlineSpacedElements" onClick={confirmBlockUpdate}>Confirmer</button>
+                                    <button className="hoverReactBlue inlineSpacedElements" onClick={closeBlockEditionModal}>Annuler</button>
+                                    <button className="hoverReactRed inlineSpacedElements" onClick={deleteBlock}>Supprimer</button>
+                                </div>
+                            )
+                    }
+
+                </dialog>
+
+
+
+                <dialog ref={newElmModal}>
+                    <p className="dialogBox">Choisissez le type de bloc que vous voulez créer :</p>
+                    <div className="dialogBox">
+                        <fieldset>
                             <div className="dialogBox">
-                                <button className="hoverReactGreen inlineSpacedElements" onClick={confirmBlockUpdate}>Confirmer</button>
-                                <button className="hoverReactBlue inlineSpacedElements" onClick={closeBlockEditionModal}>Annuler</button>
-                                <button className="hoverReactRed inlineSpacedElements" onClick={deleteBlock}>Supprimer</button>
+                                <div className="dialogBox">
+                                    <input
+                                        type="radio"
+                                        id="block"
+                                        name="block"
+                                        value="block"
+                                        checked={newElmChoice === "block"}
+                                        onChange={() => setNewElmChoice("block")}
+                                    />
+                                    <label htmlFor="block">Bloc</label>
+                                </div>
+                                <div className="dialogBox">
+                                    <input
+                                        type="radio"
+                                        id="criteria"
+                                        name="criteria"
+                                        value="criteria"
+                                        checked={newElmChoice === "criteria"}
+                                        onChange={() => setNewElmChoice("criteria")}
+                                    />
+                                    <label htmlFor="criteria">Critère</label>
+                                </div>
                             </div>
                         </fieldset>
+                    </div>
+
+                    <div className="dialogBox">
+                        <button className="hoverReactGreen inlineSpacedElements" onClick={confirmNewElmCreation}>Confirmer</button>
+                        <button className="hoverReactBlue inlineSpacedElements" onClick={closeNewElmModal}>Annuler</button>
                     </div>
                 </dialog>
 

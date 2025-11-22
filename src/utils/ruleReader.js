@@ -57,7 +57,7 @@ const addRuleIndex = (data) => {
     return [data, dataId];
 };
 
-const removeRuleIndex = (rule) => {
+const removeRuleIndex = (data) => {
     if (typeof data.type === "undefined") return data;
 
     let level = 0;
