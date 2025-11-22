@@ -10,4 +10,5 @@ export default defineConfig({
       },
     }),
   ],
+  base: "https://ariachnide.github.io/rulesManager_front/"
 })
